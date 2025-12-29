@@ -36,7 +36,10 @@ export default function FeesPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Fee Management</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Fee Management</h1>
+          <p className="text-sm text-muted-foreground mt-1">Track fees, payments, and outstanding dues</p>
+        </div>
         <Button variant="outline">Download Report</Button>
       </div>
 

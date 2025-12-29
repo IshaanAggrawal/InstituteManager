@@ -51,7 +51,10 @@ export default function TestResultsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Upload Test Results</h1>
+      <div>
+        <h1 className="text-3xl font-bold">Upload Test Results</h1>
+        <p className="text-sm text-muted-foreground mt-1">Upload Excel files to automatically send results to parents</p>
+      </div>
 
       <Card>
         <CardHeader>

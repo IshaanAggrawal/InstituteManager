@@ -73,9 +73,10 @@ export default function StudentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Student Directory</h1>
-        
-        {/* ADD STUDENT MODAL */}
+        <div>
+          <h1 className="text-3xl font-bold">Student Directory</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage all student records and information</p>
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4"/> Add New Student</Button>
