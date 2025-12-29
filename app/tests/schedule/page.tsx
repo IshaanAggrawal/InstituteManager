@@ -1,100 +1,178 @@
 "use client"
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import axios from 'axios'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { toast } from 'sonner'
-import { Sparkles, Image as ImageIcon } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Calendar, Clock, Upload, Camera, Users } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
-export default function SchedulePage() {
-  const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string>("")
-  const [loading, setLoading] = useState(false)
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selected = e.target.files[0]
-      setFile(selected)
-      setPreview(URL.createObjectURL(selected))
+export default function TestSchedulePage() {
+  const [schedule, setSchedule] = useState([
+    { id: 1, subject: 'Mathematics', date: '2024-01-15', time: '10:00 AM', batch: 'Class 12-A', duration: '2 hours' },
+    { id: 2, subject: 'Physics', date: '2024-01-17', time: '11:00 AM', batch: 'Class 12-B', duration: '2 hours' },
+    { id: 3, subject: 'Chemistry', date: '2024-01-20', time: '09:30 AM', batch: 'Class 12-A', duration: '2 hours' },
+  ])
+  
+  const [image, setImage] = useState<string | null>(null)
+  
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setImage(event.target?.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
-
-  const handleUpload = async () => {
-    if (!file) return
-    setLoading(true)
-
-    try {
-      // 1. Upload Image to Supabase Storage (Bucket: 'schedules')
-      const fileName = `schedule-${Date.now()}`
-      const { data: uploadData, error } = await supabase.storage
-        .from('schedules') // Make sure this bucket exists in Supabase!
-        .upload(fileName, file)
-
-      if (error) throw error
-
-      // 2. Get Public URL
-      const { data: urlData } = supabase.storage
-        .from('schedules')
-        .getPublicUrl(uploadData.path)
-
-      // 3. Trigger AI Agent (n8n)
-      await axios.post('/api/trigger-schedule', { imageUrl: urlData.publicUrl })
-
-      toast.success("Schedule uploaded! AI is processing dates and batches.")
-      setFile(null)
-      setPreview("")
-
-    } catch (error: any) {
-      toast.error("Upload failed: " + error.message)
+  
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet)
+        console.log('Parsed Excel data:', jsonData)
+        // Here you would process the schedule data from Excel
+      }
+      reader.readAsArrayBuffer(file)
     }
-    setLoading(false)
   }
-
+  
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">AI Test Scheduler</h1>
-
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Test Schedule</h1>
+          <p className="text-sm text-muted-foreground mt-1">Schedule tests and manage upcoming exams</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Schedule Upload Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              Upload Schedule
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Upload Excel File</label>
+              <Input 
+                type="file" 
+                accept=".xlsx,.xls" 
+                onChange={handleExcelUpload}
+                className="max-w-md"
+              />
+              <p className="text-xs text-muted-foreground">Upload Excel with columns: Subject, Date, Time, Batch, Duration</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Upload Image (Handwritten Schedule)</label>
+              <Input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleImageUpload}
+                className="max-w-md"
+              />
+              <p className="text-xs text-muted-foreground">AI will extract schedule details from handwritten schedules</p>
+            </div>
+            
+            {image && (
+              <div className="mt-4">
+                <p className="text-sm font-medium mb-2">Preview:</p>
+                <img 
+                  src={image} 
+                  alt="Uploaded schedule" 
+                  className="max-w-full h-auto rounded border"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Add New Schedule Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Add New Test
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subject</label>
+                <Input placeholder="e.g. Mathematics" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Batch</label>
+                <Input placeholder="e.g. Class 12-A" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Date</label>
+                <Input type="date" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Time</label>
+                <Input type="time" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Duration</label>
+                <Input placeholder="e.g. 2 hours" />
+              </div>
+              <div className="space-y-2 pt-6">
+                <Button className="w-full">Add Test</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Schedule List */}
       <Card>
         <CardHeader>
-          <CardTitle>Upload Schedule Image</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            Upcoming Tests
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:bg-gray-50 transition">
-            <Input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              id="file-upload"
-              onChange={handleFileSelect}
-            />
-            <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-              {preview ? (
-                <img src={preview} alt="Preview" className="max-h-64 rounded shadow-md" />
-              ) : (
-                <>
-                  <ImageIcon className="h-12 w-12 text-gray-400 mb-2" />
-                  <span className="text-gray-600">Click to upload image</span>
-                </>
-              )}
-            </label>
-          </div>
-
-          <Button onClick={handleUpload} disabled={!file || loading} className="w-full">
-            {loading ? (
-               "Analyzing with AI..." 
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Auto-Parse & Schedule
-              </>
-            )}
-          </Button>
-          
-          <p className="text-xs text-center text-gray-400">
-            Supported: Handwritten notes, Printed tables, Screenshots.
-          </p>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Subject</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Batch</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {schedule.map((test) => (
+                <TableRow key={test.id}>
+                  <TableCell className="font-medium">{test.subject}</TableCell>
+                  <TableCell>{test.date}</TableCell>
+                  <TableCell>{test.time}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{test.batch}</Badge>
+                  </TableCell>
+                  <TableCell>{test.duration}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm">Edit</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
