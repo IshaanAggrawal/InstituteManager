@@ -26,10 +26,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user || null);
       setLoading(false);
 
-      // Listen for auth changes
+      // Listen for auth changes across all tabs
       const { data: { subscription } } = await supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          setUser(session?.user || null);
+        (event, session) => {
+          // Handle SIGNED_OUT event specifically for cross-tab logout
+          if (event === 'SIGNED_OUT') {
+            setUser(null);
+            // Only redirect in the current tab if it's not already on the home page
+            if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+              router.push('/');
+              router.refresh();
+            }
+          } else {
+            // Handle other events (SIGNED_IN, TOKEN_REFRESHED, etc.)
+            setUser(session?.user || null);
+          }
           setLoading(false);
         }
       );
@@ -53,6 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
 
+      // Redirect to dashboard after successful login
+      router.push('/dashboard');
+      router.refresh();
+      
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -70,6 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
 
+      // Redirect to dashboard after successful signup
+      router.push('/dashboard');
+      router.refresh();
+      
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -77,8 +96,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
+    try {
+      // Sign out from Supabase (this will trigger SIGNED_OUT event across all tabs)
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) {
+        console.error('Logout error:', error);
+        // Still proceed with local cleanup even if there's an error
+      }
+      
+      // Update local state to reflect logged-out status
+      // This will automatically update the navbar via context
+      setUser(null);
+      
+      // Redirect to home page after successful logout
+      router.push('/');
+      router.refresh(); // Ensure router state is updated
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still update state and redirect to maintain UX consistency
+      setUser(null);
+      router.push('/');
+    }
   };
 
   return (

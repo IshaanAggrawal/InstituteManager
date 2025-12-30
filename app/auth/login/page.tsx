@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className=" w-full bg-linear-to-br from-background via-emerald-50/50 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 relative overflow-hidden flex flex-col">
+    <div className=" w-full bg-linear-to-br from-background via-emerald-50/50 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 relative overflow-hidden flex flex-col mt-20">
       
       {/* Main Content Area */}
       <div className="flex-1 flex items-center justify-center px-4 pb-12">

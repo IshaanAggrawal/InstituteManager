@@ -23,8 +23,6 @@ export function Navbar() {
   }, []) // Empty dependency array to run only once on mount
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
-  // Don't show the App Navbar on login and signup pages
-  if (pathname === "/auth/login" || pathname === "/auth/signup") return null
 
   const authRoutes = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
