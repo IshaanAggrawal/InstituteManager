@@ -44,7 +44,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-background via-emerald-50/30 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 p-6">
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-7xl mx-auto w-full">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
