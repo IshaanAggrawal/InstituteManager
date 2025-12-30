@@ -34,7 +34,7 @@ export default function FeesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-7xl mx-auto w-full">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Fee Management</h1>

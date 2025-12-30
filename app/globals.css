@@ -137,3 +137,30 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .animate-scroll {
+    display: flex;
+    animation: scroll linear infinite;
+    animation-duration: 40s;
+    width: fit-content;
+  }
+  
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
