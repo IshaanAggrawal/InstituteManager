@@ -29,15 +29,16 @@ export default function SignupPage() {
     const result = await signup(email, password);
     
     if (result.success) {
-      toast.success('Account created successfully! Please check your email to verify your account.');
-      router.push('/login');
+      toast.success('Account created! Redirecting to dashboard...');
+      // DIRECT REDIRECT TO DASHBOARD
+      router.push('/dashboard');
     } else {
       toast.error(result.error || 'Signup failed. Please try again.');
     }
   };
 
   return (
-    <div className="w-full bg-gradient-to-br from-background via-emerald-50/50 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 relative overflow-hidden flex flex-col">
+    <div className="w-full bg-gradient-to-br from-background via-emerald-50/50 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 relative overflow-hidden flex flex-col mt-20">
       
       {/* Main Content Area */}
       <div className="flex-1 flex items-center justify-center px-4 pb-12">

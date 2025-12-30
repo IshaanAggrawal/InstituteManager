@@ -20,16 +20,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check active session on initial load
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-      setLoading(false);
+      try {
+        console.log("Checking Supabase session...");
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error("Session check error:", error);
+        }
+
+        if (session) {
+            console.log("User found:", session.user.email);
+            setUser(session.user);
+        } else {
+            console.log("No active session.");
+            setUser(null);
+        }
+      } catch (err) {
+        console.error("Unexpected error checking session:", err);
+      } finally {
+        setLoading(false);
+      }
 
       // Listen for auth changes
       const { data: { subscription } } = await supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          setUser(session?.user || null);
+        (event, session) => {
+          console.log("Auth Event:", event);
+          if (event === 'SIGNED_OUT') {
+            setUser(null);
+            router.push('/');
+            router.refresh();
+          } else if (session) {
+            setUser(session.user);
+          }
           setLoading(false);
         }
       );
@@ -40,45 +63,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkSession();
-  }, []);
+  }, [router]);
 
   const login = async (email: string, password: string) => {
+    console.log("Attempting login for:", email);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Login Supabase Error:", error.message);
         return { success: false, error: error.message };
       }
 
+      console.log("Login Successful:", data);
       return { success: true };
     } catch (error: any) {
+      console.error("Login Exception:", error);
       return { success: false, error: error.message };
     }
   };
 
   const signup = async (email: string, password: string) => {
+    console.log("Attempting signup for:", email);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) {
+        console.error("Signup Supabase Error:", error.message);
         return { success: false, error: error.message };
       }
 
+      console.log("Signup Successful:", data);
       return { success: true };
     } catch (error: any) {
+      console.error("Signup Exception:", error);
       return { success: false, error: error.message };
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   return (

@@ -10,7 +10,6 @@ import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 
-// ⚠️ FIXED: The component is now properly exported as default
 export default function LoginPage() {
   const router = useRouter()
   const { login, loading } = useAuth()
@@ -32,7 +31,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className=" w-full bg-linear-to-br from-background via-emerald-50/50 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 relative overflow-hidden flex flex-col">
+    <div className=" w-full bg-linear-to-br from-background via-emerald-50/50 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 relative overflow-hidden flex flex-col mt-20">
       
       {/* Main Content Area */}
       <div className="flex-1 flex items-center justify-center px-4 pb-12">
@@ -109,6 +108,13 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
+                       <button
+                        type="button"
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
                 </CardContent>
