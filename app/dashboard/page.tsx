@@ -1,202 +1,163 @@
-"use client"
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, Clock, CreditCard, AlertCircle, ArrowRight, CheckCircle2, Database, MessageSquare } from 'lucide-react'
-import Link from 'next/link'
+"use client";
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, CreditCard, FileText, BarChart3, Calendar, GraduationCap, DollarSign, FileBarChart, BookOpen, Globe, Award } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    presentToday: 0,
-    feesCollected: 0,
-    pendingFees: 0
-  })
-  const [loading, setLoading] = useState(true)
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
-
-  const fetchStats = async () => {
-    try {
-      // 1. Get Total Students
-      const { count: studentCount } = await supabase
-        .from('students')
-        .select('*', { count: 'exact', head: true })
-
-      // 2. Get Today's Attendance
-      const today = new Date().toISOString().split('T')[0]
-      const { count: presentCount } = await supabase
-        .from('attendance')
-        .select('*', { count: 'exact', head: true })
-        .eq('date', today)
-        .eq('status', 'Present')
-
-      // 3. Get Fee Stats
-      const { data: feeData } = await supabase
-        .from('fees')
-        .select('paid_amount, total_amount')
-      
-      let paid = 0
-      let total = 0
-      if (feeData) {
-        feeData.forEach(f => {
-          paid += Number(f.paid_amount)
-          total += Number(f.total_amount)
-        })
-      }
-
-      setStats({
-        totalStudents: studentCount || 0,
-        presentToday: presentCount || 0,
-        feesCollected: paid,
-        pendingFees: total - paid
-      })
-    } catch (error) {
-      console.error("Error:", error)
-    } finally {
-      setLoading(false)
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <div className="text-2xl">Loading...</div>
+      </div>
+    );
   }
 
-  const attendancePercentage = stats.totalStudents > 0 
-    ? Math.round((stats.presentToday / stats.totalStudents) * 100) 
-    : 0
+  if (!user) {
+    // If not logged in, redirect would be handled by a middleware or the component would render differently
+    // For now, we'll show a message
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <div className="text-2xl text-center">
+          <p>Please log in to access the dashboard</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Stats data - in a real app, this would come from an API
+  const stats = [
+    { title: "Total Students", value: "1,248", change: "+12%", icon: Users, color: "text-blue-500" },
+    { title: "Fees Collected", value: "$42,560", change: "+8%", icon: DollarSign, color: "text-green-500" },
+    { title: "Attendance Rate", value: "94.2%", change: "+3.1%", icon: FileText, color: "text-purple-500" },
+    { title: "Active Courses", value: "24", change: "+2", icon: BookOpen, color: "text-orange-500" },
+  ];
+
+  // Recent activities - in a real app, this would come from an API
+  const recentActivities = [
+    { id: 1, user: "John Smith", action: "Added new student", time: "2 min ago" },
+    { id: 2, user: "Emma Johnson", action: "Updated fee payment", time: "15 min ago" },
+    { id: 3, user: "Michael Chen", action: "Marked attendance", time: "1 hour ago" },
+    { id: 4, user: "Sarah Williams", action: "Uploaded test results", time: "3 hours ago" },
+  ];
 
   return (
-    <div className="space-y-6">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-1">Institute Overview</p>
+    <div className="min-h-screen w-full bg-gradient-to-br from-background via-emerald-50/30 to-primary/5 dark:from-background dark:via-background dark:to-primary/10 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back, {user?.email || 'Admin'}!</p>
         </div>
-        <div className="text-sm font-medium text-slate-500">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="bg-white/70 dark:bg-card/50 backdrop-blur-sm border-emerald-100/50 dark:border-emerald-900/30">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                  <div className={`p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 ${stat.color}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">{stat.change} from last month</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Stats Grid - Strict & Clean */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
-        <Card className="rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">
-              {loading ? "-" : stats.totalStudents}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Charts and Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Chart Card */}
+          <Card className="lg:col-span-2 bg-white/70 dark:bg-card/50 backdrop-blur-sm border-emerald-100/50 dark:border-emerald-900/30">
+            <CardHeader>
+              <CardTitle>Performance Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80 flex items-center justify-center bg-emerald-50/30 dark:bg-emerald-900/10 rounded-lg border border-emerald-100/30 dark:border-emerald-900/20">
+                <p className="text-muted-foreground">Chart visualization would appear here</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Attendance</CardTitle>
-            <Clock className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">
-              {loading ? "-" : `${attendancePercentage}%`}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">{stats.presentToday} Present</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Revenue</CardTitle>
-            <CreditCard className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-              {loading ? "-" : `₹${stats.feesCollected.toLocaleString()}`}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">Collected</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Pending Dues</CardTitle>
-            <AlertCircle className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {loading ? "-" : `₹${stats.pendingFees.toLocaleString()}`}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">Outstanding</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Sections */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        
-        {/* Quick Actions */}
-        <Card className="col-span-2 border shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Management Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="grid sm:grid-cols-2 gap-3">
-             <Link href="/tests/results" className="block">
-               <div className="flex items-center justify-between p-4 rounded border hover:bg-slate-50 transition-colors">
-                  <div>
-                    <div className="font-medium text-sm text-slate-900">Upload Results</div>
-                    <div className="text-xs text-slate-500 mt-0.5">Excel / CSV Parser</div>
+          {/* Recent Activity */}
+          <Card className="bg-white/70 dark:bg-card/50 backdrop-blur-sm border-emerald-100/50 dark:border-emerald-900/30">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3">
+                    <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{activity.user}</p>
+                      <p className="text-sm text-muted-foreground truncate">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-slate-400" />
-               </div>
-             </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-             <Link href="/tests/schedule" className="block">
-               <div className="flex items-center justify-between p-4 rounded border hover:bg-slate-50 transition-colors">
-                  <div>
-                    <div className="font-medium text-sm text-slate-900">Schedule Test</div>
-                    <div className="text-xs text-slate-500 mt-0.5">AI Image Scanner</div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-slate-400" />
-               </div>
-             </Link>
-          </CardContent>
-        </Card>
-
-        {/* System Status - Simple List */}
-        <Card className="border shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">System Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                   <Database className="w-4 h-4 text-slate-400" />
-                   Database
+        {/* Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <Card className="bg-white/70 dark:bg-card/50 backdrop-blur-sm border-emerald-100/50 dark:border-emerald-900/30">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                  <Users className="h-5 w-5" />
                 </div>
-                <div className="flex items-center gap-1.5 text-emerald-600 font-medium text-xs uppercase">
-                   <CheckCircle2 className="w-3.5 h-3.5" /> Online
-                </div>
-             </div>
+                <CardTitle>Student Management</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">Manage student profiles, enrollment, and academic records with ease.</p>
+              <button className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">View Students →</button>
+            </CardContent>
+          </Card>
 
-             <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                   <MessageSquare className="w-4 h-4 text-slate-400" />
-                   WhatsApp API
+          <Card className="bg-white/70 dark:bg-card/50 backdrop-blur-sm border-emerald-100/50 dark:border-emerald-900/30">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                  <CreditCard className="h-5 w-5" />
                 </div>
-                <div className="flex items-center gap-1.5 text-emerald-600 font-medium text-xs uppercase">
-                   <CheckCircle2 className="w-3.5 h-3.5" /> Active
+                <CardTitle>Fee Tracking</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">Automate fee collection, generate receipts, and track payments.</p>
+              <button className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">View Fees →</button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/70 dark:bg-card/50 backdrop-blur-sm border-emerald-100/50 dark:border-emerald-900/30">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                  <FileText className="h-5 w-5" />
                 </div>
-             </div>
-
-             <div className="pt-2 border-t mt-2">
-                <p className="text-xs text-slate-400">Server Time: {new Date().toLocaleTimeString()}</p>
-             </div>
-          </CardContent>
-        </Card>
-
+                <CardTitle>Attendance System</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">Digital attendance tracking with real-time reports and analytics.</p>
+              <button className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">View Attendance →</button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
-  )
+  );
 }

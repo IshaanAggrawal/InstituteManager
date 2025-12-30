@@ -50,7 +50,7 @@ export default function TestResultsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-7xl mx-auto w-full">
       <div>
         <h1 className="text-3xl font-bold">Upload Test Results</h1>
         <p className="text-sm text-muted-foreground mt-1">Upload Excel files to automatically send results to parents</p>

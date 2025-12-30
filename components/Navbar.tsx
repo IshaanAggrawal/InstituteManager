@@ -3,20 +3,30 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, CreditCard, FileText, BarChart3, Calendar, LogOut, Sun, Moon } from "lucide-react"
+import { LayoutDashboard, Users, CreditCard, FileText, BarChart3, Calendar, LogOut, Sun, Moon, Menu, X, User, LogIn } from "lucide-react"
 import { useScroll } from "@/hooks/use-scroll" // 1. Import the hook
 import { useTheme } from "next-themes"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/auth-context"
 
 export function Navbar() {
   const pathname = usePathname()
   const scrolled = useScroll(20) // 2. Detect scroll > 20px
   
-  // Don't show the App Navbar on the Login page (root)
-  if (pathname === "/") return null
+  const { user, logout, loading } = useAuth()
   
   const { theme, setTheme } = useTheme()
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false)
+  
+  useEffect(() => {
+    setIsThemeLoaded(true)
+  }, []) // Empty dependency array to run only once on mount
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  
+  // Don't show the App Navbar on login and signup pages
+  if (pathname === "/auth/login" || pathname === "/auth/signup") return null
 
-  const routes = [
+  const authRoutes = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/students", label: "Students", icon: Users },
     { href: "/attendence", label: "Attendance", icon: FileText },
@@ -24,6 +34,14 @@ export function Navbar() {
     { href: "/tests/schedule", label: "Schedule", icon: Calendar },
     { href: "/tests/results", label: "Results", icon: BarChart3 },
   ]
+  
+  const publicRoutes = [
+    { href: "/", label: "Home", icon: LayoutDashboard },
+    { href: "/auth/login", label: "Login", icon: LogIn },
+    { href: "/auth/signup", label: "Sign Up", icon: LogIn },
+  ]
+  
+  const routes = user ? authRoutes : publicRoutes
 
   return (
     <div className={cn(
@@ -55,10 +73,16 @@ export function Navbar() {
         </div>
         
         {/* Navigation Links */}
-        <div className="flex-1 flex items-center justify-center gap-1 overflow-x-auto no-scrollbar">
+        {/* Desktop Navigation - Hidden on Mobile */}
+        <div className="hidden md:flex flex-1 items-center justify-center gap-1 overflow-x-auto no-scrollbar">
           {routes.map((route) => {
             const Icon = route.icon
             const isActive = pathname === route.href
+            
+            // Only show auth routes if user is logged in, otherwise only show home in main nav
+            if (!user && route.href !== "/") {
+              return null;
+            }
             
             return (
               <Link 
@@ -77,20 +101,88 @@ export function Navbar() {
             )
           })}
         </div>
+        
+        {/* Mobile Navigation - Hidden on Desktop */}
+        <div className="md:hidden flex items-center">
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          
+          {/* Mobile Menu Dropdown */}
+          {isMobileMenuOpen && (
+            <div className="absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg rounded-b-lg py-2 z-50 md:hidden border border-emerald-100 dark:border-emerald-900/20">
+              {routes.map((route) => {
+                const Icon = route.icon
+                const isActive = pathname === route.href
+                
+                // Only show auth routes if user is logged in, otherwise only show home in mobile nav
+                if (!user && route.href !== "/") {
+                  return null;
+                }
+                
+                return (
+                  <Link 
+                    key={route.href} 
+                    href={route.href} 
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
+                      isActive 
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" 
+                        : "text-muted-foreground hover:bg-emerald-50 dark:hover:bg-emerald-900/10"
+                    )}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{route.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
-        {/* Theme Toggle & Logout / Profile */}
-        <div className="ml-2 px-2 flex items-center gap-2">
+        {/* Theme Toggle & Auth Controls */}
+        <div className="hidden md:flex items-center gap-2">
           <button 
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="h-9 w-9 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 transition-colors"
+            disabled={!isThemeLoaded}
           >
-            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isThemeLoaded ? (theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />) : <Sun className="w-4 h-4" />}
           </button>
-          <Link href="/">
-            <button className="h-9 w-9 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 transition-colors">
-              <LogOut className="w-4 h-4" />
-            </button>
-          </Link>
+          
+          {user ? (
+            // User is logged in - show profile and logout
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                <User className="w-4 h-4" />
+              </div>
+              <button 
+                onClick={logout}
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 transition-colors"
+                disabled={loading}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            // User is not logged in - show login and signup buttons
+            <div className="flex items-center gap-2">
+              <Link href="/auth/signup">
+                <button className="h-9 px-4 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:hover:bg-emerald-800/30 transition-colors">
+                  Sign Up
+                </button>
+              </Link>
+              <Link href="/auth/login">
+                <button className="h-9 px-4 flex items-center justify-center rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                  Login
+                </button>
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
     </div>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Search, Plus, Trash2, User } from 'lucide-react'
 
@@ -71,10 +71,11 @@ export default function StudentsPage() {
   )
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    // UPDATED: Added padding (p-4 md:p-8), max-width, and centering for professional layout
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:space-y-0 md:items-center">
         <div>
-          <h1 className="text-3xl font-bold">Student Directory</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Student Directory</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage all student records and information</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -159,7 +160,7 @@ export default function StudentsPage() {
             <TableBody>
               {filteredStudents.length === 0 ? (
                  <TableRow>
-                   <TableCell colSpan={5} className="text-center h-24 text-gray-500">
+                   <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                      No students found.
                    </TableCell>
                  </TableRow>
@@ -167,8 +168,8 @@ export default function StudentsPage() {
                 filteredStudents.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell className="font-medium flex items-center gap-2">
-                      <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-gray-500"/>
+                      <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-muted-foreground"/>
                       </div>
                       {student.name}
                     </TableCell>
