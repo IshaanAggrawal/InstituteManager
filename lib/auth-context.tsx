@@ -20,26 +20,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check active session on initial load
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-      setLoading(false);
+      try {
+        console.log("Checking Supabase session...");
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error("Session check error:", error);
+        }
 
-      // Listen for auth changes across all tabs
+        if (session) {
+            console.log("User found:", session.user.email);
+            setUser(session.user);
+        } else {
+            console.log("No active session.");
+            setUser(null);
+        }
+      } catch (err) {
+        console.error("Unexpected error checking session:", err);
+      } finally {
+        setLoading(false);
+      }
+
+      // Listen for auth changes
       const { data: { subscription } } = await supabase.auth.onAuthStateChange(
         (event, session) => {
-          // Handle SIGNED_OUT event specifically for cross-tab logout
+          console.log("Auth Event:", event);
           if (event === 'SIGNED_OUT') {
             setUser(null);
-            // Only redirect in the current tab if it's not already on the home page
-            if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-              router.push('/');
-              router.refresh();
-            }
-          } else {
-            // Handle other events (SIGNED_IN, TOKEN_REFRESHED, etc.)
-            setUser(session?.user || null);
+            router.push('/');
+            router.refresh();
+          } else if (session) {
+            setUser(session.user);
           }
           setLoading(false);
         }
@@ -51,72 +63,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkSession();
-  }, []);
+  }, [router]);
 
   const login = async (email: string, password: string) => {
+    console.log("Attempting login for:", email);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Login Supabase Error:", error.message);
         return { success: false, error: error.message };
       }
 
-      // Redirect to dashboard after successful login
-      router.push('/dashboard');
-      router.refresh();
-      
+      console.log("Login Successful:", data);
       return { success: true };
     } catch (error: any) {
+      console.error("Login Exception:", error);
       return { success: false, error: error.message };
     }
   };
 
   const signup = async (email: string, password: string) => {
+    console.log("Attempting signup for:", email);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) {
+        console.error("Signup Supabase Error:", error.message);
         return { success: false, error: error.message };
       }
 
-      // Redirect to dashboard after successful signup
-      router.push('/dashboard');
-      router.refresh();
-      
+      console.log("Signup Successful:", data);
       return { success: true };
     } catch (error: any) {
+      console.error("Signup Exception:", error);
       return { success: false, error: error.message };
     }
   };
 
   const logout = async () => {
     try {
-      // Sign out from Supabase (this will trigger SIGNED_OUT event across all tabs)
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
-      if (error) {
-        console.error('Logout error:', error);
-        // Still proceed with local cleanup even if there's an error
-      }
-      
-      // Update local state to reflect logged-out status
-      // This will automatically update the navbar via context
-      setUser(null);
-      
-      // Redirect to home page after successful logout
-      router.push('/');
-      router.refresh(); // Ensure router state is updated
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still update state and redirect to maintain UX consistency
-      setUser(null);
-      router.push('/');
     }
   };
 

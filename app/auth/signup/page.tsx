@@ -29,8 +29,9 @@ export default function SignupPage() {
     const result = await signup(email, password);
     
     if (result.success) {
-      toast.success('Account created successfully! Please check your email to verify your account.');
-      router.push('/login');
+      toast.success('Account created! Redirecting to dashboard...');
+      // DIRECT REDIRECT TO DASHBOARD
+      router.push('/dashboard');
     } else {
       toast.error(result.error || 'Signup failed. Please try again.');
     }
